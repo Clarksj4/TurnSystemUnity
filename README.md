@@ -24,11 +24,16 @@ In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _
 ### Turn system component
 The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it notifies each entity in priority order whenever _EndTurn_ is called via script.
 
+__Events:__
+- _TurnStarting_: Called each time an entity begins its turn. Example usage: update a turn order UI to highlight the entity whose turn it is.
+- _TurnEnding_: Called each time an entity ends its turn. Example usage: resolve effects on entities, or a UI.
+- _CycleComplete_: Called each time the order has been completely cycled (i.e. every entity has had a turn). Example usage: Draw new cards, update weather system or day/night cycle.
+- _OrderChanged_: Called whenever an entity is added, removed, or has its priority changed in the order. Example usage: update a turn order UI; adding / removing an entity portrait, etc 
 
 - Add event listeners for the desired events: 
-- _TurnStarting_
-- _TurnEnding_, 
-- _CycleComplete_, or 
+
+
+ or 
 - _OrderChanged_
 - Begin on Load: if you want the first turn to occur as soon as the game begins (called during Start)
 
