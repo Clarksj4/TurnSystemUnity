@@ -24,6 +24,11 @@ In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _
 ### Turn system component
 The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it notifies each entity in priority order whenever _EndTurn_ is called via script.
 
+__Properties:__
+- _BeginOnLoad_ Causes the turn order to progress to the first entity when the game loads (called during Start)
+
+- _Paused_ If checked, interrupts calls to the _EndTurn_ method so that the turn is not ended while the system is paused.
+
 __Events:__
 - _TurnStarting_: Called each time an entity begins its turn. __Example usage:__ update a turn order UI to highlight the entity whose turn it is.
 
