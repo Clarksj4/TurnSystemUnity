@@ -14,3 +14,22 @@ https://drive.google.com/open?id=0B9MQaq0nXQvCNjQxa2t2VC1sdFk
 
 System
 https://drive.google.com/open?id=0B9MQaq0nXQvCd1ZzZ05LRHZQTG8
+
+Hierarchy - entities are children
+
+Have to call end turn on turn system - show example with button
+
+Delete item, removes automatically from order
+
+Nested turn systems
+
+Hook up entity event to script on attached object
+Add another listener for turn notification
+
+Add UI listener for when order is changed
+
+End of turn effects when Cycle Complete is called
+
+Update priotity
+
+Move next automatically when current is removed
