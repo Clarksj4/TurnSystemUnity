@@ -5,7 +5,7 @@
 Two components are required to implement a turn system: the _Turn System_ and _Turn Based Entity_ components.
 
 <p align="center">
-  <img src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCd1ZzZ05LRHZQTG8">
+  
   <img src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCNjQxa2t2VC1sdFk">
 </p>
 
@@ -19,7 +19,7 @@ In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _
 
 ---
 
-
+<img align="right" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCd1ZzZ05LRHZQTG8">
 ### Turn system component
 
 
