@@ -1,35 +1,31 @@
 # TurnSystemUnity
 
-## Usage
-
+Blurb about what the turn system is....
 Two components are required to implement a turn system: the _Turn System_ and _Turn Based Entity_ components.
 
-<p align="center">
-  
-  <img src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCNjQxa2t2VC1sdFk">
-</p>
+
 
 
 
 
 <img align="right" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCd2NTcjZ4eWdhQnM">
 
-### Hierarchy
+## Hierarchy
 In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _TurnBasedEntity_ component; the depth of the association does not matter (parent, grandparent, etc). The order of the _TurnBasedEntity_'s in the hierarchy does not impact the order in which they take their turns; it is determined solely by the entity's _Priority_ property.
 
 ---
 
 <img align="left" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCd1ZzZ05LRHZQTG8">
 
-### Turn system component
+## Turn system component
 The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it notifies each entity in priority order whenever _EndTurn_ is called via script.
 
-__Properties:__
+### Properties
 - _BeginOnLoad_ Causes the turn order to progress to the first entity when the game loads (called during Start)
 
 - _Paused_ If checked, interrupts calls to the _EndTurn_ method so that the turn is not ended while the system is paused.
 
-__Events:__
+### Events
 - _TurnStarting_: Called each time an entity begins its turn. __Example usage:__ update a turn order UI to highlight the entity whose turn it is.
 
 - _TurnEnding_: Called each time an entity ends its turn. __Example usage:__ resolve effects on entities, or a UI.
@@ -37,6 +33,14 @@ __Events:__
 - _CycleComplete_: Called each time the order has been completely cycled (i.e. every entity has had a turn). __Example usage:__ Draw new cards, update weather system or day/night cycle.
 
 - _OrderChanged_: Called whenever an entity is added, removed, or has its priority changed in the order. __Example usage:__ update a turn order UI; adding / removing an entity portrait, etc 
+
+---
+
+<img align="right" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCNjQxa2t2VC1sdFk">
+
+## Turn Based Entity component
+
+
 
 - Add event listeners for the desired events: 
 
