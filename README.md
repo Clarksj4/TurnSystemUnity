@@ -9,14 +9,27 @@ Two components are required to implement a turn system: the _Turn System_ and _T
   <img src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCNjQxa2t2VC1sdFk">
 </p>
 
-1. Add turn system component
-- Add event listeners for the desired events
+
+### Hierarchy
+In the scene hierarchy, the _TurnSystem_ component must be an ancestor (parent, grandparent, etc) of each _TurnBasedEntity_ component.
+
+<img align="left" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCd2NTcjZ4eWdhQnM">
+
+### Turn system component
+
+
+
+- Add event listeners for the desired events: 
+- _TurnStarting_
+- _TurnEnding_, 
+- _CycleComplete_, or 
+- _OrderChanged_
 - Begin on Load: if you want the first turn to occur as soon as the game begins (called during Start)
 
 2. Add turn based entity component to each item that is part of the turn order
 - In the scene hierarchy, each entity must be a child the turn system
 3. Set the priority of each entity; higher priority items get their turn first
-4. Add event listeners for the desired events: _TurnStart_ or _TurnEnd_
+4. Add event listeners for the desired events: _TurnStarting_ or _TurnEnding_
 
 
 Hierarchy - entities are children
@@ -37,3 +50,8 @@ End of turn effects when Cycle Complete is called
 Update priotity
 
 Move next automatically when current is removed
+
+
+
+Hierarchy
+https://drive.google.com/open?id=0B9MQaq0nXQvCd2NTcjZ4eWdhQnM
