@@ -17,6 +17,8 @@ Two components are required to implement a turn system: the _Turn System_ and _T
 In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _TurnBasedEntity_ component; the depth of the association does not matter (parent, grandparent, etc). The order of the _TurnBasedEntity_'s in the hierarchy does not impact the order in which they take their turns; it is determined solely by the entity's _Priority_ property
 
 
+
+
 ### Turn system component
 
 
