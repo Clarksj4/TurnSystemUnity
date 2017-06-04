@@ -52,14 +52,6 @@ _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ C
 
 ---
 
-<img align="left" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCQ3lMQnN4eHFUNms">
-
-## Multiple turn orders
-
-It is possible to nest Turn Systems. This is useful in a Team-Unit situation where each team acts in a turn based manner; but also, the units on each team activate in a set order. In the example image each nested _TurnSystem_ has a _TurnBasedEntity_ component attached to it. The _TurnBasedEntity_ component's turn started event is connected to the associated _TurnSystem_'s _EndTurn_ method. Only the top-most turn system should have the _BeginOnLoad_ property checked.
-
----
-
 ## Removing Entities
 
 Calling _Destroy_ on an entity will remove it from its associated _TurnSystem_. By default, removing the _Current_ entity from the _TurnSystem_ will cause the system to progress to the next entity. It is possible to prevent this by calling the _Remove_ method via script.
@@ -83,6 +75,22 @@ Calling _Destroy_ on an entity will remove it from its associated _TurnSystem_. 
             turnSystem.EndTurn();
         }
     }
+
+---
+
+<img align="left" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCQ3lMQnN4eHFUNms">
+
+## Multiple turn orders
+
+It is possible to nest Turn Systems. This is useful in a Team-Unit situation where each team acts in a turn based manner; but also, the units on each team activate in a set order. In the example image each nested _TurnSystem_ has a _TurnBasedEntity_ component attached to it. The _TurnBasedEntity_ component's turn started event is connected to the associated _TurnSystem_'s _EndTurn_ method. Only the top-most turn system should have the _BeginOnLoad_ property checked.
+
+---
+
+## Equal Priorities
+
+In the event that entities are added to a _TurnSystem_ that have the same priority, the system will iterate over them in insertion order.
+
+
 
 - Add event listeners for the desired events: 
 
