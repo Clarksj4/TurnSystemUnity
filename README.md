@@ -21,9 +21,9 @@ In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _
 The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it notifies each entity in priority order whenever _EndTurn_ is called via script.
 
 ### Properties
-- _BeginOnLoad_ Causes the turn order to progress to the first entity when the game loads (called during Start)
+- _BeginOnLoad_: Causes the turn order to progress to the first entity when the game loads (called during Start)
 
-- _Paused_ If checked, interrupts calls to the _EndTurn_ method so that the turn is not ended while the system is paused.
+- _Paused_: If checked, interrupts calls to the _EndTurn_ method so that the turn is not ended while the system is paused.
 
 ### Events
 - _TurnStarting_: Called each time an entity begins its turn. __Example usage:__ update a turn order UI to highlight the entity whose turn it is.
@@ -40,7 +40,15 @@ The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it
 
 ## Turn Based Entity component
 
+### Properties
 
+- _Priority_: Determines the order in which entities are activated. Higher priority entities get their turn first.
+
+### Events
+
+- _TurnStarting_: Called when __this__ entity's turn has begun. __Example Usage:__ Allow the attached object to act during its turn, display a notification that the objects turn has begun, etc
+
+- _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ Check quest objectives (e.g. is the object standing in a particular spot), hide the turn notification, etc
 
 - Add event listeners for the desired events: 
 
