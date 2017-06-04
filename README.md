@@ -52,6 +52,8 @@ _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ C
 
 ---
 
+<img align="left" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCQ3lMQnN4eHFUNms">
+
 ## Multiple turn orders
 
 It is possible to nest turn orders. 
