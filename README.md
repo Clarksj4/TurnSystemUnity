@@ -1,7 +1,6 @@
 # TurnSystemUnity
 
-Blurb about what the turn system is....
-Two components are required to implement a turn system: the _Turn System_ and _Turn Based Entity_ components.
+The following is a Unity implementation of [this turn order](). It is a priority ordered collection of items that allows enumeration. Two components are required to implement a turn system: the _Turn System_ and _Turn Based Entity_ components.
 
 <img align="right" src="https://drive.google.com/uc?export=view&id=0B9MQaq0nXQvCd2NTcjZ4eWdhQnM">
 
