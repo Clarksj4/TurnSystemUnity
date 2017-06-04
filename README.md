@@ -56,8 +56,33 @@ _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ C
 
 ## Multiple turn orders
 
-It is possible to nest Turn Systems. This is useful in a Team-Unit situation where each team acts in a turn based manner; but also, the units on each team activate in a set order. In the exmaple image each nested _TurnSystem_ has a _TurnBasedEntity_ component attached to it. The _TurnBasedEntity_ component's turn started event is connected to the associated _TurnSystem_'s _EndTurn_ method. Only the top-most turn system should have the _BeginOnLoad_ property checked.
+It is possible to nest Turn Systems. This is useful in a Team-Unit situation where each team acts in a turn based manner; but also, the units on each team activate in a set order. In the example image each nested _TurnSystem_ has a _TurnBasedEntity_ component attached to it. The _TurnBasedEntity_ component's turn started event is connected to the associated _TurnSystem_'s _EndTurn_ method. Only the top-most turn system should have the _BeginOnLoad_ property checked.
 
+---
+
+## Removing Entities
+
+Calling _Destroy_ on an entity will remove it from its associated _TurnSystem_. By default, removing the _Current_ entity from the _TurnSystem_ will cause the system to progress to the next entity. It is possible to prevent this by calling the _Remove_ method via script.
+
+    public class TurnSystemRemoveExample : MonoBehaviour
+    {
+        TurnSystem turnSytem;
+        TurnBasedEntity entity;
+
+        public void RemoveExample()
+        {
+            // Proceed to next entity if this entity is the current entity
+            bool nextIfCurrent = false;
+            turnSystem.Remove(entity, nextIfCurrent);
+
+            Destory(entity.gameObject);
+            
+            // ... Do something ...
+            // ... Wait for animation to complete, end game, etc ...
+            
+            turnSystem.EndTurn();
+        }
+    }
 
 - Add event listeners for the desired events: 
 
