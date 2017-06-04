@@ -50,6 +50,11 @@ _TurnStarting_: Called when __this__ entity's turn has begun. __Example Usage:__
 
 _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ Check quest objectives (e.g. is the object standing in a particular spot), hide the turn notification, etc
 
+---
+
+## Multiple turn orders
+
+It is possible to nest turn orders. 
 
 
 - Add event listeners for the desired events: 
