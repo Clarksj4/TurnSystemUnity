@@ -88,4 +88,4 @@ In the event that entities are added to a _TurnSystem_ that have the same priori
 
 ## Demo
 
-Clone or download the repo as a zip to check out the demo scene that shows the functionality of thes components.
+Clone or download the repo as a zip to check out the demo scene that shows the functionality of these components.
