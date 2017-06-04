@@ -50,6 +50,8 @@ The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it
 
 - _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ Check quest objectives (e.g. is the object standing in a particular spot), hide the turn notification, etc
 
+
+
 - Add event listeners for the desired events: 
 
 
