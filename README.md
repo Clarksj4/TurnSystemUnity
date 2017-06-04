@@ -83,3 +83,9 @@ It is possible to nest Turn Systems. This is useful in a Team-Unit situation whe
 ## Equal Priorities
 
 In the event that entities are added to a _TurnSystem_ that have the same priority, the system will iterate over them in insertion order.
+
+---
+
+## Demo
+
+Clone or download the repo as a zip to check out the demo scene that shows the functionality of thes components.
