@@ -21,18 +21,18 @@ In the scene hierarchy, the _TurnSystem_ component must be an ancestor of each _
 The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it notifies each entity in priority order whenever _EndTurn_ is called via script.
 
 ### Properties
-- _BeginOnLoad_: Causes the turn order to progress to the first entity when the game loads (called during Start)
+_BeginOnLoad_: Causes the turn order to progress to the first entity when the game loads (called during Start)
 
-- _Paused_: If checked, interrupts calls to the _EndTurn_ method so that the turn is not ended while the system is paused.
+_Paused_: If checked, interrupts calls to the _EndTurn_ method so that the turn is not ended while the system is paused.
 
 ### Events
-- _TurnStarting_: Called each time an entity begins its turn. __Example usage:__ update a turn order UI to highlight the entity whose turn it is.
+_TurnStarting_: Called each time an entity begins its turn. __Example usage:__ update a turn order UI to highlight the entity whose turn it is.
 
-- _TurnEnding_: Called each time an entity ends its turn. __Example usage:__ resolve effects on entities, or a UI.
+_TurnEnding_: Called each time an entity ends its turn. __Example usage:__ resolve effects on entities, or a UI.
 
-- _CycleComplete_: Called each time the order has been completely cycled (i.e. every entity has had a turn). __Example usage:__ Draw new cards, update weather system or day/night cycle.
+_CycleComplete_: Called each time the order has been completely cycled (i.e. every entity has had a turn). __Example usage:__ Draw new cards, update weather system or day/night cycle.
 
-- _OrderChanged_: Called whenever an entity is added, removed, or has its priority changed in the order. __Example usage:__ update a turn order UI; adding / removing an entity portrait, etc 
+_OrderChanged_: Called whenever an entity is added, removed, or has its priority changed in the order. __Example usage:__ update a turn order UI; adding / removing an entity portrait, etc 
 
 ---
 
@@ -42,13 +42,13 @@ The _TurnSystem_ component holds a reference to each child _TurnBasedEntity_, it
 
 ### Properties
 
-- _Priority_: Determines the order in which entities are activated. Higher priority entities get their turn first.
+_Priority_: Determines the order in which entities are activated. Higher priority entities get their turn first.
 
 ### Events
 
-- _TurnStarting_: Called when __this__ entity's turn has begun. __Example Usage:__ Allow the attached object to act during its turn, display a notification that the objects turn has begun, etc
+_TurnStarting_: Called when __this__ entity's turn has begun. __Example Usage:__ Allow the attached object to act during its turn, display a notification that the objects turn has begun, etc
 
-- _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ Check quest objectives (e.g. is the object standing in a particular spot), hide the turn notification, etc
+_TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ Check quest objectives (e.g. is the object standing in a particular spot), hide the turn notification, etc
 
 
 
