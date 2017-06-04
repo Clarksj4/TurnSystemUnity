@@ -56,7 +56,7 @@ _TurnEnding_: Called when __this__ entity's turn has ended. __Example Usage:__ C
 
 ## Multiple turn orders
 
-It is possible to nest turn orders. 
+It is possible to nest Turn Systems. This is useful in a Team-Unit situation where each team acts in a turn based manner; but also, the units on each team activate in a set order. In the exmaple image each nested _TurnSystem_ has a _TurnBasedEntity_ component attached to it. The _TurnBasedEntity_ component's turn started event is connected to the associated _TurnSystem_'s _EndTurn_ method. Only the top-most turn system should have the _BeginOnLoad_ property checked.
 
 
 - Add event listeners for the desired events: 
