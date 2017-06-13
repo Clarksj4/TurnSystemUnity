@@ -56,7 +56,7 @@ namespace TurnBased
                 throw new ArgumentNullException("Pawn cannot be null");
 
             // Can't have duplicates in order
-            if (pawns.Contains(pawn))
+            if (this.Contains(pawn))
                 throw new ArgumentException("Order already contains pawn");
 
             // First pawn to be inserted
@@ -65,12 +65,8 @@ namespace TurnBased
 
             else
             {
-                var walker = pawns.First;
-
-                // Walk until finding a smaller node
-                while (walker != null && 
-                       pawn.Priority.CompareTo(walker.Value.Priority) < 0)
-                    walker = walker.Next;
+                // Walk until finding a smaller or equal priority node
+                var walker = Enumerate(n => n.Value.Priority.CompareTo(pawn.Priority) <= 0);
 
                 // Add to end of order
                 if (walker == null)
@@ -115,10 +111,15 @@ namespace TurnBased
         /// </summary>
         public void UpdatePriority(ITurnBased<T> pawn)
         {
+            // End turn if pawn == current
+            // Order needs to be accurate at the time end turn is called
+
             // Can't update pawn marked for removal
             if (currentToBeRemoved && currentNode.Value == pawn)
                 throw new ArgumentException("Order does not contain pawn");
 
+            bool currentUpdated = pawn == Current;
+            
             // Remove from order
             bool removed = Remove(pawn);
 
@@ -128,6 +129,13 @@ namespace TurnBased
 
             // Re-insert into order in correct position
             Insert(pawn);
+
+            // Move to next pawn in order
+            MoveNext();
+
+            // Notify the pawn that its turn has ended, unless its having the next turn
+            if (currentUpdated && pawn != Current)
+                pawn.TurnEnd();
         }
 
         /// <summary>
@@ -161,12 +169,37 @@ namespace TurnBased
 
         public IEnumerator<ITurnBased<T>> GetEnumerator()
         {
-            // Don't return the node that is marked for removal
-            if (currentToBeRemoved)
-                return pawns.Where(p => p != currentNode.Value).GetEnumerator();
+            return Enumerate().Select(n => n.Value).GetEnumerator();
+        }
 
-            else
-                return pawns.GetEnumerator();
+        /// <summary>
+        /// Iterate the list of pawns until finding one that matches the given condition. Returns null if no 
+        /// pawn matches the condition
+        /// </summary>
+        LinkedListNode<ITurnBased<T>> Enumerate(Func<LinkedListNode<ITurnBased<T>>, bool> condition)
+        {
+            foreach (var node in Enumerate())
+            {
+                if (condition(node))
+                    return node;
+            }
+
+            return null;
+        }
+
+        IEnumerable<LinkedListNode<ITurnBased<T>>> Enumerate()
+        {
+            var walker = pawns.First;
+
+            // Iterate through nods, return all those that aren't hidden
+            while (walker != null)
+            {
+                // If node is NOT hidden, return it
+                if (!(walker == currentNode && currentToBeRemoved))
+                    yield return walker;
+
+                walker = walker.Next;
+            }
         }
 
         /// <summary>
@@ -217,12 +250,7 @@ namespace TurnBased
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            // Don't return the node that is marked for removal
-            if (currentToBeRemoved)
-                return pawns.Where(p => p != currentNode.Value).GetEnumerator();
-
-            else
-                return pawns.GetEnumerator();
+            return Enumerate().Select(n => n.Value).GetEnumerator();
         }
     }
 }

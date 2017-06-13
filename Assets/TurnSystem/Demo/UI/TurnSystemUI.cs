@@ -90,7 +90,9 @@ public class TurnSystemUI : MonoBehaviour
         entityCatalogue.Add(entity, entityUI);
 
         // [PLACHOLDER] TODO: Get portrait
-        entityUI.GetComponentInChildren<Text>().text = entity.name;
+        Text text = entityUI.GetComponentInChildren<Text>();
+        if (text  != null)
+            text.text = entity.name + ", Priority: " + entity.Priority;
     }
 
     /// <summary>
