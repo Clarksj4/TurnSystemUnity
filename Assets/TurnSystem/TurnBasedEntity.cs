@@ -14,6 +14,9 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
 
     private TurnSystem turnSystem;
 
+    /// <summary>
+    /// This entity's priority in the turn system
+    /// </summary>
     public float Priority
     {
         get { return priority; }
@@ -35,9 +38,6 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     /// </summary>
     public void TurnStart()
     {
-        // [PLACHOLDER]: TODO: Remove
-        print(gameObject.name + "'s turn");
-
         if (TurnStarting != null)
             TurnStarting.Invoke(this);
     }
@@ -47,9 +47,6 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     /// </summary>
     public void TurnEnd()
     {
-        // [PLACHOLDER]: TODO: Remove
-        print("End of " + gameObject.name + "'s turn");
-
         if (TurnEnding != null)
             TurnEnding.Invoke(this);
     }
@@ -59,5 +56,12 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
         // Get ref to parent system, insert into order
         turnSystem = GetComponentInParent<TurnSystem>();
         turnSystem.Insert(this);
+    }
+
+    void OnDestroy()
+    {
+        // Remove this entity from the turn system
+        if (turnSystem.Contains(this))
+            turnSystem.Remove(this);
     }
 }

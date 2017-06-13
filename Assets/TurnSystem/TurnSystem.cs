@@ -7,6 +7,11 @@ using UnityEngine.Events;
 [AddComponentMenu("Turn Based/Turn System")]
 public class TurnSystem : MonoBehaviour
 {
+    [Tooltip("Should the first turn begin once the turn system has loaded?")]
+    public bool BeginOnLoad = true;
+    [Tooltip("Check to prevent turns from progressing when the EndTurn method is called")]
+    public bool Paused = false;
+
     [SerializeField]
     public TurnEvent TurnEnding;
     [SerializeField]
@@ -16,10 +21,24 @@ public class TurnSystem : MonoBehaviour
     [SerializeField]
     public TurnEvent OrderChanged;
 
+    /// <summary>
+    /// The entity whose turn it currently is
+    /// </summary>
     public TurnBasedEntity Current { get { return order.Current as TurnBasedEntity; } }
+
+    /// <summary>
+    /// Iterates over each entity in this turn system
+    /// </summary>
     public IEnumerable<TurnBasedEntity> Order { get { return order.Select(i => i as TurnBasedEntity); } }
 
     private TurnOrder<float> order = new TurnOrder<float>();
+
+    void Start()
+    {
+        // Start the first turn
+        if (BeginOnLoad)
+            EndTurn();
+    }
 
     /// <summary>
     /// End the current entities turn, progress to the next entity, restarting the cycle if it is complete
@@ -27,7 +46,7 @@ public class TurnSystem : MonoBehaviour
     public void EndTurn()
     {
         // Only do a thing if the order is not empty
-        if (order.Count > 0)
+        if (!Paused && order.Count > 0)
         {
             // Notify current object's turn has ended
             if (Current != null)
@@ -50,6 +69,14 @@ public class TurnSystem : MonoBehaviour
     }
 
     /// <summary>
+    /// Does this turn order contain the given entity?
+    /// </summary>
+    public bool Contains(TurnBasedEntity entity)
+    {
+        return order.Contains(entity);
+    }
+
+    /// <summary>
     /// Insert an entity into the order
     /// </summary>
     public void Insert(TurnBasedEntity entity)
@@ -61,29 +88,10 @@ public class TurnSystem : MonoBehaviour
         OrderChanged.Invoke(entity);
     }
 
-    // [PLACHOLDER]: TODO remove this test code
-    public void Add()
-    {
-        GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        primitive.transform.SetParent(transform);
-        var entity = primitive.AddComponent<TurnBasedEntity>();
-    }
-
-    // [PLACHOLDER]: TODO remove this test code
-    public void Remove()
-    {
-        TurnBasedEntity obj = FindObjectOfType<TurnBasedEntity>();
-        if (obj != null)
-        {
-            Remove(obj);
-            Destroy(obj.gameObject);
-        }
-    }
-
     /// <summary>
     /// Remove an entity from the order. If the current entity is removed, the turn order progresses to the next entity
     /// </summary>
-    public void Remove(TurnBasedEntity entity)
+    public void Remove(TurnBasedEntity entity, bool moveNextIfCurrent = true)
     {
         // Check if the current item is being removed
         bool currentRemoved = entity == Current;
@@ -94,8 +102,10 @@ public class TurnSystem : MonoBehaviour
         // Notify that an object has been removed
         OrderChanged.Invoke(entity);
 
-        // If the current item was removed, progress to next ite's turn
-        if (currentRemoved && order.Count > 0)
+        // If the current item was removed, progress to next item's turn
+        if (currentRemoved &&
+            moveNextIfCurrent &&
+            order.Count > 0)
             EndTurn();
     }
 
