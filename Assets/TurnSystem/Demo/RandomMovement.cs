@@ -40,9 +40,8 @@ public class RandomMovement : MonoBehaviour {
 
     public Vector3 RandomRoamDestination()
     {
-        // Get random direction and distance from current position
+        // Get random direction and distance from origin
         Vector3 direction = Random.insideUnitSphere * RoamRadius;
-        direction += transform.position;
 
         // Confine to navmesh
         NavMeshHit hit;

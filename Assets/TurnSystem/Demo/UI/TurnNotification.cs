@@ -1,18 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TurnNotification : MonoBehaviour
 {
     [Tooltip("The duration the notification appears for")]
     public float Duration;
 
+    private Text text;
     private Animator animator;
     private float time = -1f;
 
     void Awake()
     {
         animator = GetComponent<Animator>();
+        text = GetComponentInChildren<Text>();
     }
 
     void LateUpdate()
@@ -26,8 +29,9 @@ public class TurnNotification : MonoBehaviour
     /// <summary>
     /// Shows the notification animation
     /// </summary>
-    public void Play()
+    public void Play(GameObject obj)
     {
+        text.text = obj.name + "'s turn";
         time = Duration;
 
         animator.SetBool("Show", true);
