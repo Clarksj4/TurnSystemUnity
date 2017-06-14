@@ -131,11 +131,26 @@ namespace TurnBased
             Insert(pawn);
 
             // Move to next pawn in order
-            MoveNext();
+            if (currentUpdated)
+            {
+                // Remember current node so it can be recycled if necessary
+                var node = currentNode;
 
-            // Notify the pawn that its turn has ended, unless its having the next turn
-            if (currentUpdated && pawn != Current)
-                pawn.TurnEnd();
+                // Move to next pawn in order
+                bool isMore = Cycle();
+
+                // Remove previous node if it was marked
+                DeferredRecycle(node);
+
+                // Notify the pawn that its turn has ended, unless its having the next turn
+                if (pawn != Current)
+                {
+                    pawn.TurnEnd();
+
+                    // Notify current of turn start
+                    StartCurrent();
+                }
+            }
         }
 
         /// <summary>
