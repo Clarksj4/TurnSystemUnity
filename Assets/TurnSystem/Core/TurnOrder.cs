@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace TurnBased
 {
     /// <summary>
     /// Stores and cycles pawns in priority order
     /// </summary>
-    public class TurnOrder<T> : IEnumerable<ITurnBased<T>> where T : IComparable<T>
+    public class TurnOrder<T> : ITurnOrder<T> 
+        where T : IComparable<T>
     {
         /// <summary>
         /// The pawn whose turn it currently is. Returns null if the current pawn was removed from the order
@@ -17,8 +17,8 @@ namespace TurnBased
         {
             get
             {
-                if (currentToBeRemoved ||   // If Current was removed from list, don't return its ref
-                    currentNode == null)    // Current node not yet set
+                if (currentNode == null ||       // Current node not yet set
+                    toBeRemoved == currentNode)  // If Current was removed from list, don't return its ref
                     return null;
 
                 // Get pawn from linked list node
@@ -29,22 +29,11 @@ namespace TurnBased
         /// <summary>
         /// The number of pawns in this turn order.
         /// </summary>
-        public int Count { get; private set; }
+        public int Count { get { return toBeRemoved == null ? pawns.Count : pawns.Count - 1; } }
 
-        private LinkedList<ITurnBased<T>> pawns;
-        private LinkedListNode<ITurnBased<T>> currentNode;
-        private bool currentToBeRemoved;
-
-        /// <summary>
-        /// An empty turn order
-        /// </summary>
-        public TurnOrder()
-        {
-            pawns = new LinkedList<ITurnBased<T>>();
-            currentNode = null;
-            currentToBeRemoved = false;
-            Count = 0;
-        }
+        private LinkedList<ITurnBased<T>> pawns = new LinkedList<ITurnBased<T>>();
+        private LinkedListNode<ITurnBased<T>> currentNode = null;
+        private LinkedListNode<ITurnBased<T>> toBeRemoved = null;
 
         /// <summary>
         /// Inserts the pawn in order based upon its priority
@@ -56,12 +45,20 @@ namespace TurnBased
                 throw new ArgumentNullException("Pawn cannot be null");
 
             // Can't have duplicates in order
-            if (pawns.Contains(pawn))
+            if (Contains(pawn))
                 throw new ArgumentException("Order already contains pawn");
 
             // First pawn to be inserted
             if (pawns.Count == 0)
                 pawns.AddFirst(pawn);
+
+            // If the pawn was marked for removal, insert it back into the order
+            // at the correct position.
+            else if (MarkedForRemoval(pawn))
+            {
+                toBeRemoved = null;
+                UpdatePriority(pawn);
+            }
 
             else
             {
@@ -80,8 +77,6 @@ namespace TurnBased
                 else
                     pawns.AddBefore(walker, pawn);
             }
-
-            Count++;
         }
 
         /// <summary>
@@ -93,21 +88,17 @@ namespace TurnBased
             if (pawn == null)
                 throw new ArgumentNullException("Pawn cannot be null");
 
-            // Find pawn's node incase its the current node
-            LinkedListNode<ITurnBased<T>> node = pawns.Find(pawn);
+            // If its their turn - don't remove them until the end of the round
+            // OR maybe the local ref handles this already?
+            if (currentNode != null &&
+                currentNode.Value == pawn)
+            {
+                toBeRemoved = currentNode;
+                return true;
+            }
 
-            if (node == null)
-                return false;
-
-            // If current pawn is being removed, marked it as removed
-            if (node == currentNode)
-                currentToBeRemoved = true;
             else
-                pawns.Remove(node);
-
-            // Pawn successfully removed
-            Count--;
-            return true;
+                return pawns.Remove(pawn);
         }
 
         /// <summary>
@@ -116,7 +107,7 @@ namespace TurnBased
         public void UpdatePriority(ITurnBased<T> pawn)
         {
             // Can't update pawn marked for removal
-            if (currentToBeRemoved && currentNode.Value == pawn)
+            if (MarkedForRemoval(pawn))
                 throw new ArgumentException("Order does not contain pawn");
 
             // Remove from order
@@ -143,14 +134,11 @@ namespace TurnBased
             // Notify current of turn end
             EndCurrent();
 
-            // Remember current node so it can be recycled if necessary
-            var node = currentNode;
-
             // Move to next pawn in order
             bool isMore = Cycle();
 
             // Remove previous node if it was marked
-            DeferredRecycle(node);
+            DeferredRecycle();
 
             // Notify current of turn start
             StartCurrent();
@@ -159,15 +147,43 @@ namespace TurnBased
             return isMore;
         }
 
+        /// <summary>
+        /// Reset this round of actors. Subsequent calls to MoveNext() will
+        /// begin at the start of the turn order.
+        /// </summary>
+        public void Reset()
+        {
+            currentNode = null;
+        }
+
+        /// <summary>
+        /// Checks if this turn order contains the given pawn.
+        /// </summary>
+        public bool Contains(ITurnBased<T> pawn)
+        {
+            return !MarkedForRemoval(pawn) && pawns.Contains(pawn);
+        }
+
         public IEnumerator<ITurnBased<T>> GetEnumerator()
         {
-            // Don't return the node that is marked for removal
-            if (currentToBeRemoved)
-                return pawns.Where(p => p != currentNode.Value).GetEnumerator();
-
-            else
-                return pawns.GetEnumerator();
+            foreach (ITurnBased<T> pawn in pawns)
+            {
+                // Don't return the node that is marked for removal
+                if (!MarkedForRemoval(pawn))
+                    yield return pawn;
+            }  
         }
+
+        /// <summary>
+        /// Checks if the given pawn is marked to be removed from the list of pawns.
+        /// </summary>
+        private bool MarkedForRemoval(ITurnBased<T> pawn)
+        {
+            return toBeRemoved != null &&
+                    toBeRemoved.Value != null &&
+                    toBeRemoved.Value == pawn;
+        }
+
 
         /// <summary>
         /// Informs the current pawn that its turn has ended
@@ -179,14 +195,14 @@ namespace TurnBased
                 Current.TurnEnd();
         }
 
-        void DeferredRecycle(LinkedListNode<ITurnBased<T>> node)
+        void DeferredRecycle()
         {
             // Remove current node if its been marked
-            if (currentToBeRemoved)
-                pawns.Remove(node);
+            if (toBeRemoved != null)
+                pawns.Remove(toBeRemoved);
 
             // Update mark
-            currentToBeRemoved = false;
+            toBeRemoved = null;
         }
 
         /// <summary>
@@ -217,12 +233,7 @@ namespace TurnBased
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            // Don't return the node that is marked for removal
-            if (currentToBeRemoved)
-                return pawns.Where(p => p != currentNode.Value).GetEnumerator();
-
-            else
-                return pawns.GetEnumerator();
+            return GetEnumerator();
         }
     }
 }

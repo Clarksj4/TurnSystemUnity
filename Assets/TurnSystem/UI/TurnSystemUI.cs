@@ -117,10 +117,10 @@ public class TurnSystemUI : MonoBehaviour
     {
         int index = -1;
 
-        var current = turnSystem.Current;
+        TurnBasedEntity current = turnSystem.Current;
         if (current != null)
         {
-            var associatedRect = entityCatalogue[current];
+            RectTransform associatedRect = entityCatalogue[current];
             index = associatedRect.GetSiblingIndex();
         }
 

@@ -30,6 +30,26 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
         }
     }
 
+    private void Start()
+    {
+
+    }
+
+    private void OnEnable()
+    {
+        // Get ref to parent system, insert into order
+        turnSystem = GetComponentInParent<TurnSystem>();
+        if (turnSystem != null && !turnSystem.Contains(this))
+            turnSystem.Insert(this);
+    }
+
+    private void OnDisable()
+    {
+        // Get ref to parent system, insert into order
+        if (turnSystem != null)
+            turnSystem.Remove(this);
+    }
+
     /// <summary>
     /// The entities turn has begun
     /// </summary>
@@ -52,12 +72,5 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
 
         if (TurnEnding != null)
             TurnEnding.Invoke(this);
-    }
-
-    void Awake()
-    {
-        // Get ref to parent system, insert into order
-        turnSystem = GetComponentInParent<TurnSystem>();
-        turnSystem.Insert(this);
     }
 }

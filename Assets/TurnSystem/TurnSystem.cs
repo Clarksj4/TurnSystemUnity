@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TurnBased;
 using UnityEngine;
 using UnityEngine.Events;
@@ -17,7 +16,15 @@ public class TurnSystem : MonoBehaviour
     public TurnEvent OrderChanged;
 
     public TurnBasedEntity Current { get { return order.Current as TurnBasedEntity; } }
-    public IEnumerable<TurnBasedEntity> Order { get { return order.Select(i => i as TurnBasedEntity); } }
+    public IEnumerable<TurnBasedEntity> Order 
+    { 
+        get 
+        {
+            // Cast each pawn to TurnBasedEntity
+            foreach (ITurnBased<float> pawn in order)
+                yield return pawn as TurnBasedEntity;
+        } 
+    }
 
     private TurnOrder<float> order = new TurnOrder<float>();
 
@@ -61,25 +68,6 @@ public class TurnSystem : MonoBehaviour
         OrderChanged.Invoke(entity);
     }
 
-    // [PLACHOLDER]: TODO remove this test code
-    public void Add()
-    {
-        GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        primitive.transform.SetParent(transform);
-        var entity = primitive.AddComponent<TurnBasedEntity>();
-    }
-
-    // [PLACHOLDER]: TODO remove this test code
-    public void Remove()
-    {
-        TurnBasedEntity obj = FindObjectOfType<TurnBasedEntity>();
-        if (obj != null)
-        {
-            Remove(obj);
-            Destroy(obj.gameObject);
-        }
-    }
-
     /// <summary>
     /// Remove an entity from the order. If the current entity is removed, the turn order progresses to the next entity
     /// </summary>
@@ -109,5 +97,10 @@ public class TurnSystem : MonoBehaviour
 
         // Notify that an object has had its priority changed
         OrderChanged.Invoke(entity);
+    }
+
+    public bool Contains(TurnBasedEntity entity)
+    {
+        return order.Contains(entity);
     }
 }

@@ -21,7 +21,5 @@ namespace TurnBased
         /// The pawn's turn is ending
         /// </summary>
         void TurnEnd();
-
-
     }
 }
