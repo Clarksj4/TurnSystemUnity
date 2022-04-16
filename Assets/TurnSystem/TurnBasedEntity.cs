@@ -30,11 +30,6 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
         }
     }
 
-    private void Start()
-    {
-
-    }
-
     private void OnEnable()
     {
         // Get ref to parent system, insert into order
@@ -55,11 +50,9 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     /// </summary>
     public void TurnStart()
     {
-        // [PLACHOLDER]: TODO: Remove
-        print(gameObject.name + "'s turn");
+        SendMessage("OnTurnStart", SendMessageOptions.DontRequireReceiver);
 
-        if (TurnStarting != null)
-            TurnStarting.Invoke(this);
+        TurnStarting?.Invoke(this);
     }
 
     /// <summary>
@@ -67,10 +60,8 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     /// </summary>
     public void TurnEnd()
     {
-        // [PLACHOLDER]: TODO: Remove
-        print("End of " + gameObject.name + "'s turn");
+        SendMessage("OnTurnEnd", SendMessageOptions.DontRequireReceiver);
 
-        if (TurnEnding != null)
-            TurnEnding.Invoke(this);
+        TurnEnding?.Invoke(this);
     }
 }
