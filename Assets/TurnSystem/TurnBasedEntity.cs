@@ -50,8 +50,6 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     /// </summary>
     public void TurnStart()
     {
-        SendMessage("OnTurnStart", SendMessageOptions.DontRequireReceiver);
-
         TurnStarting?.Invoke(this);
     }
 
@@ -60,8 +58,6 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     /// </summary>
     public void TurnEnd()
     {
-        SendMessage("OnTurnEnd", SendMessageOptions.DontRequireReceiver);
-
         TurnEnding?.Invoke(this);
     }
 }
