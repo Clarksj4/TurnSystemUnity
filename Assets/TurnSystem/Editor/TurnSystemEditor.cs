@@ -47,6 +47,8 @@ public class TurnSystemEditor : Editor
 
     private GUIContent gameObjectIcon = null;
     private Vector2 scrollPosition = Vector2.zero;
+    private double lastClickTimestamp = 0f;
+    private const double DOUBLE_CLICK_THRESHOLD = 0.3f;
 
     public override void OnInspectorGUI()
     {
@@ -113,9 +115,23 @@ public class TurnSystemEditor : Editor
                                 if (turnSystem.Current == actor)
                                     GUI.color = Color.green;
 
-                                // Select the actor's game object when the button is clicked.
+                                // Ping or select the actor's game object when the button is clicked.
                                 if (GUI.Button(innerRect, GUIContent.none))
-                                    EditorGUIUtility.PingObject(actor.gameObject);
+                                {
+                                    double clickTimestamp = EditorApplication.timeSinceStartup;
+
+                                    // If double clicked - select the object.
+                                    if (clickTimestamp - lastClickTimestamp < DOUBLE_CLICK_THRESHOLD)
+                                        Selection.activeGameObject = actor.gameObject;
+
+                                    // If single click - ping the object.
+                                    else
+                                        EditorGUIUtility.PingObject(actor.gameObject);
+
+
+                                    lastClickTimestamp = clickTimestamp;
+                                }
+                                    
                                 GUI.color = previous;
 
                                 // Show game object icon
