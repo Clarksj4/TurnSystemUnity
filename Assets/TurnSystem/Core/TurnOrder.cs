@@ -192,7 +192,7 @@ namespace TurnBased
         {
             // If thing has been removed from order, do not notify it of turn end
             if (Current != null)
-                Current.TurnEnd();
+                Current.OnTurnEnd();
         }
 
         void DeferredRecycle()
@@ -228,7 +228,7 @@ namespace TurnBased
         {
             // Activate current pawn...
             if (Current != null)
-                Current.TurnStart();
+                Current.OnTurnStart();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

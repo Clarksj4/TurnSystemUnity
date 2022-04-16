@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using TurnBased;
+using UnityEngine.Events;
 
 [AddComponentMenu("Turn Based/Turn Based Entity")]
 public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
@@ -9,11 +10,17 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     private float priority = 0;
 
     [Header("Events")]
-    public TurnEvent TurnStarting;
-    public TurnEvent TurnEnding;
+    [Tooltip("Occurs when this actor's turn has started.")]
+    public UnityEvent<TurnBasedEntity> TurnStarted;
+    [Tooltip("Occurs when this actor's turn has ended.")]
+    public UnityEvent<TurnBasedEntity> TurnEnded;
 
     private TurnSystem turnSystem;
 
+    /// <summary>
+    /// Gets this actor's priority in the turn order.
+    /// Higher priorities act first.
+    /// </summary>
     public float Priority
     {
         get { return priority; }
@@ -46,18 +53,18 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     }
 
     /// <summary>
-    /// The entities turn has begun
+    /// The entities turn has begun.
     /// </summary>
-    public void TurnStart()
+    public void OnTurnStart()
     {
-        TurnStarting?.Invoke(this);
+        TurnStarted?.Invoke(this);
     }
 
     /// <summary>
-    /// The entities turn has ended
+    /// The entities turn has ended.
     /// </summary>
-    public void TurnEnd()
+    public void OnTurnEnd()
     {
-        TurnEnding?.Invoke(this);
+        TurnEnded?.Invoke(this);
     }
 }

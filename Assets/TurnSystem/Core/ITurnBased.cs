@@ -15,11 +15,11 @@ namespace TurnBased
         /// <summary>
         /// The pawn's turn is starting
         /// </summary>
-        void TurnStart();
+        void OnTurnStart();
 
         /// <summary>
         /// The pawn's turn is ending
         /// </summary>
-        void TurnEnd();
+        void OnTurnEnd();
     }
 }
