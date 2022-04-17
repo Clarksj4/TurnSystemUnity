@@ -45,10 +45,17 @@ public class TurnSystemEditor : Editor
         set { EditorPrefs.SetBool($"{target.GetInstanceID()}_EventsExpanded", value); }
     }
 
+    private const double DOUBLE_CLICK_THRESHOLD = 0.3d;
+    private const double FOCUS_HOLD_DURATION = 0.1d;
+
+    private double lastClickTimestamp = 0d;
+    private double holdFocusTimestamp = 0d;
+
     private GUIContent gameObjectIcon = null;
     private Vector2 scrollPosition = Vector2.zero;
-    private double lastClickTimestamp = 0f;
-    private const double DOUBLE_CLICK_THRESHOLD = 0.3f;
+    private TurnBasedEntity deferredActor = null;
+    private float deferredPriority = 0f;
+    private string wantedFocus = null;
 
     public override void OnInspectorGUI()
     {
@@ -58,6 +65,11 @@ public class TurnSystemEditor : Editor
         DrawFields();
         DrawEvents();
         serializedObject.ApplyModifiedProperties();
+
+        // If an actor's priority was marked for change - make the
+        // changes now.
+        UpdateDeferredActorPriority();
+        HighlightActivePriorityField();
     }
 
     private void ListenForRepaint()
@@ -79,12 +91,23 @@ public class TurnSystemEditor : Editor
     private void DrawOrder()
     {
         TurnSystem turnSystem = target as TurnSystem;
-
         // Header
         OrderExpanded = EditorGUILayout.Foldout(OrderExpanded, "Order", true, EditorStyles.foldoutHeader);
         if (OrderExpanded)
         {
-            // Scroll view
+            // Show header if there's any actors.
+            if (turnSystem.ActorCount > 0)
+            {
+                Rect headerRect = EditorGUILayout.BeginHorizontal("Toolbar");
+                {
+                    // Wrap the actor label so that its area doesn't overlap priority label.
+                    EditorGUILayout.LabelField("Actor", new GUIStyle("WordWrappedLabel"));
+                    EditorGUILayout.LabelField("Priority", GUILayout.Width(100));
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+
+                // Scroll view
             using (EditorGUILayout.ScrollViewScope scrollView = new EditorGUILayout.ScrollViewScope
             (
                 scrollPosition,
@@ -92,7 +115,7 @@ public class TurnSystemEditor : Editor
                 false,
                 GUIStyle.none,
                 "VerticalScrollbar",
-                "Box",
+                "ObjectPickerBackground",
                 GUILayout.Height(CalculateScrollViewHeight())
             ))
             {
@@ -102,57 +125,7 @@ public class TurnSystemEditor : Editor
                 if (turnSystem.ActorCount > 0)
                 {
                     foreach (var actor in turnSystem.Order)
-                    {
-                        // Two horizontal layouts are used: an inner one that contains
-                        // the button, and an outer one that contains a flexible space
-                        // so the button is reduced in size to fit its content.
-                        Rect outerRect = EditorGUILayout.BeginHorizontal();
-                        {
-                            Rect innerRect = EditorGUILayout.BeginHorizontal();
-                            {
-                                // Make button green if it's this actor's turn
-                                Color previous = GUI.color;
-                                if (turnSystem.Current == actor)
-                                    GUI.color = Color.green;
-
-                                // Ping or select the actor's game object when the button is clicked.
-                                if (GUI.Button(innerRect, GUIContent.none))
-                                {
-                                    double clickTimestamp = EditorApplication.timeSinceStartup;
-
-                                    // If double clicked - select the object.
-                                    if (clickTimestamp - lastClickTimestamp < DOUBLE_CLICK_THRESHOLD)
-                                        Selection.activeGameObject = actor.gameObject;
-
-                                    // If single click - ping the object.
-                                    else
-                                        EditorGUIUtility.PingObject(actor.gameObject);
-
-
-                                    lastClickTimestamp = clickTimestamp;
-                                }
-                                    
-                                GUI.color = previous;
-
-                                // Show game object icon
-                                GUILayout.Label(GameObjectIcon, GUILayout.MaxHeight(16));
-
-                                // Show actor information
-                                GUILayout.Label(actor.name);
-                                GUILayout.Label(":");
-                                GUILayout.Label(actor.Priority.ToString());
-
-                                // Padding
-                                GUILayout.Space(5);
-                            }
-                            EditorGUILayout.EndHorizontal();
-
-                            // Absorb the remaining space so the button is sized to
-                            // fit its content.
-                            GUILayout.FlexibleSpace();
-                        }
-                        EditorGUILayout.EndHorizontal();
-                    }
+                        DrawActorListItem(turnSystem, actor);
                 }
 
                 // There's no actors - just draw an informative message.
@@ -163,6 +136,65 @@ public class TurnSystemEditor : Editor
                 }
             }
         }
+    }
+
+    private void DrawActorListItem(TurnSystem turnSystem, TurnBasedEntity actor)
+    {
+        // Make button green if it's this actor's turn
+        Color previous = GUI.color;
+        if (turnSystem.Current == actor)
+            GUI.color = Color.green;
+
+        // Two horizontal layouts are used: an inner one that contains
+        // the button, and an outer one that contains a flexible space
+        // so the button is reduced in size to fit its content.
+        Rect outerRect = EditorGUILayout.BeginHorizontal("Button");
+        {
+            GUI.color = previous;
+
+            Rect leftRect = EditorGUILayout.BeginHorizontal();
+            {
+                // Ping or select the actor's game object when the button is clicked.
+                if (GUI.Button(leftRect, GUIContent.none, GUIStyle.none))
+                {
+                    double clickTimestamp = EditorApplication.timeSinceStartup;
+
+                    // If double clicked - select the object.
+                    if (clickTimestamp - lastClickTimestamp < DOUBLE_CLICK_THRESHOLD)
+                        Selection.activeGameObject = actor.gameObject;
+
+                    // If single click - ping the object (will show it in hierarchy)
+                    else
+                        EditorGUIUtility.PingObject(actor.gameObject);
+
+
+                    lastClickTimestamp = clickTimestamp;
+                }
+
+                // Show game object icon - limit height in order to scale icon
+                // down to a reasonable size.
+                GUILayout.Label(GameObjectIcon, GUILayout.MaxHeight(16));
+
+                // Show actor information - wrap text with fixed height so that
+                // the text gets truncated if it tries to overlap float field
+                // space.
+                GUILayout.Label(actor.name, "WordWrapLabel", GUILayout.Height(18));
+
+                // Absorb the remaining space so the button is sized to fit its
+                // content.
+                GUILayout.FlexibleSpace();
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Each float field is given an ID corresponding to the actor it
+            // represents.
+            string controlName = $"{actor.name}_{actor.GetInstanceID()}";
+            GUI.SetNextControlName(controlName);
+            float priority = EditorGUILayout.DelayedFloatField(actor.Priority, EditorStyles.textField, GUILayout.MinWidth(80), GUILayout.Width(80));
+            if (priority != actor.Priority)
+                DeferActorPriorityUpdate(actor, priority, controlName);
+        }
+        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawFields()
@@ -223,5 +255,42 @@ public class TurnSystemEditor : Editor
     private void Repaint(TurnBasedEntity entity)
     {
         Repaint();
+    }
+
+    private void HighlightActivePriorityField()
+    {
+        if (wantedFocus != null)
+        {
+            double currentTime = EditorApplication.timeSinceStartup;
+            double focusDuration = currentTime - holdFocusTimestamp;
+            string currentFocus = GUI.GetNameOfFocusedControl();
+            bool isFocused = currentFocus == wantedFocus;
+
+            // Hold focus on the control for a limited time so it doesn't get lost during
+            // future repaints.
+            if (isFocused && focusDuration > FOCUS_HOLD_DURATION)
+                wantedFocus = null;
+
+            else
+                GUI.FocusControl(wantedFocus);
+        }
+    }
+
+    private void UpdateDeferredActorPriority()
+    {
+        if (deferredActor != null)
+        {
+            deferredActor.Priority = deferredPriority;
+            deferredActor = null;
+            Repaint();
+        }
+    }
+
+    private void DeferActorPriorityUpdate(TurnBasedEntity actor, float priority, string controlID)
+    {
+        holdFocusTimestamp = EditorApplication.timeSinceStartup;
+        wantedFocus = controlID;
+        deferredActor = actor;
+        deferredPriority = priority;
     }
 }
