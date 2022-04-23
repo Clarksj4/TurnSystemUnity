@@ -6,6 +6,13 @@ using System.Collections.Generic;
 [CustomEditor(typeof(TurnSystem))]
 public class TurnSystemEditor : Editor
 {
+    private const float ACTOR_ITEM_HEIGHT = 18f;
+    private const float ACTOR_ITEM_PADDING = 5.5f;
+    private const float MAX_ACTOR_COUNT = 6;
+    private const float MAX_SCROLL_VIEW_HEIGHT = (MAX_ACTOR_COUNT * ACTOR_ITEM_HEIGHT) + ((MAX_ACTOR_COUNT - 1) * ACTOR_ITEM_PADDING) + (2 * ACTOR_ITEM_PADDING);
+    private const double DOUBLE_CLICK_THRESHOLD = 0.3d;
+    private const double FOCUS_HOLD_DURATION = 0.1d;
+
     /// <summary>
     /// Get a lazily cached game object icon.
     /// </summary>
@@ -46,12 +53,8 @@ public class TurnSystemEditor : Editor
         set { EditorPrefs.SetBool($"{target.GetInstanceID()}_EventsExpanded", value); }
     }
 
-    private const double DOUBLE_CLICK_THRESHOLD = 0.3d;
-    private const double FOCUS_HOLD_DURATION = 0.1d;
-
     private double lastClickTimestamp = 0d;
     private double holdFocusTimestamp = 0d;
-
     private GUIContent gameObjectIcon = null;
     private Vector2 scrollPosition = Vector2.zero;
     private TurnBasedEntity deferredActor = null;
@@ -91,56 +94,75 @@ public class TurnSystemEditor : Editor
 
     private void DrawOrder()
     {
-        TurnSystem turnSystem = target as TurnSystem;
         // Header
-        OrderExpanded = EditorGUILayout.Foldout(OrderExpanded, "Order", true, EditorStyles.foldoutHeader);
+        OrderExpanded = EditorGUILayout.BeginFoldoutHeaderGroup(OrderExpanded, "Order", EditorStyles.foldoutHeader);
         if (OrderExpanded)
         {
-            // Show header if there's any actors.
+            DrawActorListHeader();
+            DrawActorList();
+        }
+        EditorGUILayout.EndFoldoutHeaderGroup();
+
+        HandleDragAndDrop();
+    }
+
+    private void DrawActorListHeader()
+    {
+        TurnSystem turnSystem = target as TurnSystem;
+
+        // Show header if there's any actors.
+        if (turnSystem.ActorCount > 0)
+        {
+            Rect headerRect = EditorGUILayout.BeginHorizontal("Toolbar");
+            {
+                // Wrap the actor label so that its area doesn't overlap priority label.
+                EditorGUILayout.LabelField("Actor", new GUIStyle("WordWrappedLabel"));
+                EditorGUILayout.LabelField("Priority", GUILayout.Width(100));
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+
+    private void DrawActorList()
+    {
+        TurnSystem turnSystem = target as TurnSystem;
+
+        // Scroll view
+        using (EditorGUILayout.ScrollViewScope scrollView = new EditorGUILayout.ScrollViewScope
+        (
+            scrollPosition,
+            false,
+            false,
+            GUIStyle.none,
+            "VerticalScrollbar",
+            "ObjectPickerBackground",
+            GUILayout.Height(CalculateScrollViewHeight())
+        ))
+        {
+            scrollPosition = scrollView.scrollPosition;
+
+            // If there's actors draw them
             if (turnSystem.ActorCount > 0)
             {
-                Rect headerRect = EditorGUILayout.BeginHorizontal("Toolbar");
+                IEnumerable<TurnBasedEntity> actors = turnSystem.CurrentRoundOrder ?? turnSystem.NextRoundOrder;
+                foreach (var actor in actors)
                 {
-                    // Wrap the actor label so that its area doesn't overlap priority label.
-                    EditorGUILayout.LabelField("Actor", new GUIStyle("WordWrappedLabel"));
-                    EditorGUILayout.LabelField("Priority", GUILayout.Width(100));
+                    // If an actor was removed from this list, stop iteration.
+                    if (DrawActorListItem(turnSystem, actor))
+                        break;
                 }
-                EditorGUILayout.EndHorizontal();
             }
 
-                // Scroll view
-            using (EditorGUILayout.ScrollViewScope scrollView = new EditorGUILayout.ScrollViewScope
-            (
-                scrollPosition,
-                false,
-                false,
-                GUIStyle.none,
-                "VerticalScrollbar",
-                "ObjectPickerBackground",
-                GUILayout.Height(CalculateScrollViewHeight())
-            ))
+            // There's no actors - just draw an informative message.
+            else
             {
-                scrollPosition = scrollView.scrollPosition;
-
-                // If there's actors draw them
-                if (turnSystem.ActorCount > 0)
-                {
-                    IEnumerable<TurnBasedEntity> actors = turnSystem.Order ?? turnSystem.NextRoundOrder;
-                    foreach (var actor in actors)
-                        DrawActorListItem(turnSystem, actor);
-                }
-
-                // There's no actors - just draw an informative message.
-                else
-                {
-                    // Information label for when there are no actors.
-                    GUILayout.Label("Actors will appear here when they are added to the turn order.", EditorStyles.centeredGreyMiniLabel);
-                }
+                // Information label for when there are no actors.
+                GUILayout.Label("Actors will appear here when they are added to the turn order.", EditorStyles.centeredGreyMiniLabel);
             }
         }
     }
 
-    private void DrawActorListItem(TurnSystem turnSystem, TurnBasedEntity actor)
+    private bool DrawActorListItem(TurnSystem turnSystem, TurnBasedEntity actor)
     {
         // Make button green if it's this actor's turn
         Color previous = GUI.color;
@@ -158,29 +180,16 @@ public class TurnSystemEditor : Editor
             {
                 // Ping or select the actor's game object when the button is clicked.
                 if (GUI.Button(leftRect, GUIContent.none, GUIStyle.none))
-                {
-                    double clickTimestamp = EditorApplication.timeSinceStartup;
-
-                    // If double clicked - select the object.
-                    if (clickTimestamp - lastClickTimestamp < DOUBLE_CLICK_THRESHOLD)
-                        Selection.activeGameObject = actor.gameObject;
-
-                    // If single click - ping the object (will show it in hierarchy)
-                    else
-                        EditorGUIUtility.PingObject(actor.gameObject);
-
-
-                    lastClickTimestamp = clickTimestamp;
-                }
+                    HandleActorClicked(actor);
 
                 // Show game object icon - limit height in order to scale icon
                 // down to a reasonable size.
-                GUILayout.Label(GameObjectIcon, GUILayout.MaxHeight(16));
+                GUILayout.Label(GameObjectIcon, GUILayout.MaxHeight(ACTOR_ITEM_HEIGHT));
 
                 // Show actor information - wrap text with fixed height so that
                 // the text gets truncated if it tries to overlap float field
                 // space.
-                GUILayout.Label(actor.name, "WordWrapLabel", GUILayout.Height(18));
+                GUILayout.Label(actor.name, "WordWrapLabel", GUILayout.Height(ACTOR_ITEM_HEIGHT));
 
                 // Absorb the remaining space so the button is sized to fit its
                 // content.
@@ -195,14 +204,66 @@ public class TurnSystemEditor : Editor
             float priority = EditorGUILayout.DelayedFloatField(actor.Priority, EditorStyles.textField, GUILayout.MinWidth(80), GUILayout.Width(80));
             if (priority != actor.Priority)
                 DeferActorPriorityUpdate(actor, priority, controlName);
+
+            // Show game object icon - limit height in order to scale icon
+            // down to a reasonable size.
+            if (GUILayout.Button(GUIContent.none, "SearchCancelButton"))
+                return turnSystem.Remove(actor);
         }
         EditorGUILayout.EndHorizontal();
+
+        return false;
+    }
+
+    private void HandleActorClicked(TurnBasedEntity actor)
+    {
+        double clickTimestamp = EditorApplication.timeSinceStartup;
+
+        // If double clicked - select the object.
+        if (clickTimestamp - lastClickTimestamp < DOUBLE_CLICK_THRESHOLD)
+            Selection.activeGameObject = actor.gameObject;
+
+        // If single click - ping the object (will show it in hierarchy)
+        else
+            EditorGUIUtility.PingObject(actor.gameObject);
+
+
+        lastClickTimestamp = clickTimestamp;
+    }
+
+    private void HandleDragAndDrop()
+    {
+        Rect lastRect = GUILayoutUtility.GetLastRect();
+        if (lastRect.Contains(Event.current.mousePosition))
+        {
+            if (Event.current.type == EventType.DragUpdated)
+            {
+                DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                Event.current.Use();
+            }
+
+            else if (Event.current.type == EventType.DragPerform)
+            {
+                TurnSystem turnSystem = target as TurnSystem;
+                foreach (Object obj in DragAndDrop.objectReferences)
+                {
+                    if (obj is GameObject)
+                    {
+                        GameObject gameObject = obj as GameObject;
+                        if (gameObject.TryGetComponent(out TurnBasedEntity entity))
+                            turnSystem.Insert(entity);
+                    }
+                        
+                }
+                Event.current.Use();
+            }
+        }
     }
 
     private void DrawFields()
     {
         // Foldout header
-        SettingsExpanded = EditorGUILayout.Foldout(SettingsExpanded, "Settings", true, EditorStyles.foldoutHeader);
+        SettingsExpanded = EditorGUILayout.BeginFoldoutHeaderGroup(SettingsExpanded, "Settings", EditorStyles.foldoutHeader);
         if (SettingsExpanded)
         {
             SerializedProperty autoStart = serializedObject.FindProperty("AutoStart");
@@ -211,12 +272,13 @@ public class TurnSystemEditor : Editor
             SerializedProperty autoLoop = serializedObject.FindProperty("AutoLoop");
             EditorGUILayout.PropertyField(autoLoop);
         }
+        EditorGUILayout.EndFoldoutHeaderGroup();
     }
 
     private void DrawEvents()
     {
         // Foldout header
-        EventsExpanded = EditorGUILayout.Foldout(EventsExpanded, "Events", true, EditorStyles.foldoutHeader);
+        EventsExpanded = EditorGUILayout.BeginFoldoutHeaderGroup(EventsExpanded, "Events", EditorStyles.foldoutHeader);
         if (EventsExpanded)
         {
             SerializedProperty turnStarted = serializedObject.FindProperty("TurnStarted");
@@ -234,6 +296,7 @@ public class TurnSystemEditor : Editor
             SerializedProperty onRoundEnded = serializedObject.FindProperty("OnRoundEnded");
             EditorGUILayout.PropertyField(onRoundEnded);
         }
+        EditorGUILayout.EndFoldoutHeaderGroup();
     }
 
     private float CalculateScrollViewHeight()
@@ -241,14 +304,14 @@ public class TurnSystemEditor : Editor
         TurnSystem turnSystem = target as TurnSystem;
 
         // Default height
-        float scrollViewHeight = 18;
+        float scrollViewHeight = ACTOR_ITEM_HEIGHT;
 
         // If there are actors make enough room for them but
         // limit it to the height of 6 actors.
         if (turnSystem.ActorCount > 0)
         {
-            float contentHeight = turnSystem.ActorCount * 18;
-            scrollViewHeight = Mathf.Min(contentHeight, 6 * 18);
+            float contentHeight = (turnSystem.ActorCount * ACTOR_ITEM_HEIGHT) + ((turnSystem.ActorCount - 1) * ACTOR_ITEM_PADDING) + (ACTOR_ITEM_PADDING * 2);
+            scrollViewHeight = Mathf.Min(contentHeight, MAX_SCROLL_VIEW_HEIGHT);
         }
 
         return scrollViewHeight;

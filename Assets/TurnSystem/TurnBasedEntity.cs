@@ -15,7 +15,16 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     [Tooltip("Occurs when this actor's turn has ended.")]
     public UnityEvent<TurnBasedEntity> TurnEnded;
 
-    private TurnSystem turnSystem;
+    private TurnSystem TurnSystem
+    {
+        get
+        {
+            if (turnSystem == null)
+                turnSystem = GetComponentInParent<TurnSystem>();
+            return turnSystem;
+        }
+    }
+    private TurnSystem turnSystem = null;
 
     /// <summary>
     /// Gets this actor's priority in the turn order.
@@ -33,7 +42,7 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
 
             // Update position in order
             if (changed)
-                turnSystem.UpdatePriority(this);
+                TurnSystem?.UpdatePriority(this);
         }
     }
 
@@ -41,7 +50,7 @@ public class TurnBasedEntity : MonoBehaviour, ITurnBased<float>
     {
         // Get ref to parent system, insert into order
         turnSystem = GetComponentInParent<TurnSystem>();
-        if (turnSystem != null && !turnSystem.Contains(this))
+        if (turnSystem != null)
             turnSystem.Insert(this);
     }
 

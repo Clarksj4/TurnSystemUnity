@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using TurnBased;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
+[ExecuteAlways]
 [AddComponentMenu("Turn Based/Turn System")]
 public class TurnSystem : MonoBehaviour
 {
@@ -29,11 +31,11 @@ public class TurnSystem : MonoBehaviour
     /// <summary>
     /// Gets the actors in the order they will act this round - null if the round hasn't started.
     /// </summary>
-    public IEnumerable<TurnBasedEntity> Order => currentOrder?.Where(a => actors.Contains(a));
+    public IEnumerable<TurnBasedEntity> CurrentRoundOrder => currentOrder?.Where(a => actors.Contains(a));
     /// <summary>
     /// Gets the actors in the order they will act next round.
     /// </summary>
-    public IEnumerable<TurnBasedEntity> NextRoundOrder => actors?.OrderBy(a => a.Priority);
+    public IEnumerable<TurnBasedEntity> NextRoundOrder => actors?.OrderByDescending(a => a.Priority);
     /// <summary>
     /// Gets the actor whose turn it is.
     /// </summary>
@@ -57,8 +59,9 @@ public class TurnSystem : MonoBehaviour
     /// </summary>
     public int RoundCount { get; private set; }
 
-    private LinkedList<TurnBasedEntity> currentOrder = new LinkedList<TurnBasedEntity>();
-    private HashSet<TurnBasedEntity> actors = new HashSet<TurnBasedEntity>();
+    [SerializeField]
+    private List<TurnBasedEntity> actors = new();
+    private LinkedList<TurnBasedEntity> currentOrder = null;
     private LinkedListNode<TurnBasedEntity> currentNode = null;
 
     private bool turnEndInProgress = false;
@@ -66,8 +69,33 @@ public class TurnSystem : MonoBehaviour
 
     private void Start()
     {
+        EditorApplication.playModeStateChanged -= ModeChanged;
+        EditorApplication.playModeStateChanged += ModeChanged;
+
         if (AutoStart)
             QueueNextTurn();
+    }
+
+    private void ModeChanged(PlayModeStateChange state)
+    {
+        if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            currentNode = null;
+            currentOrder = null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the current round of actors, or the next round of actors if the current one is null.
+    /// </summary>
+    public IEnumerable<TurnBasedEntity> GetCurrentOrNextRoundOrder()
+    {
+        return CurrentRoundOrder ?? NextRoundOrder;
+    }
+
+    public int GetCurrentOrNextRoundOrderCount()
+    {
+        return GetCurrentOrNextRoundOrder()?.Count() ?? 0;
     }
 
     /// <summary>
@@ -81,9 +109,11 @@ public class TurnSystem : MonoBehaviour
 
         // Insert into current turn order so long as the entity doesn't
         // already exist.
-        if (actors.Add(entity))
+        if (!actors.Contains(entity))
         {
-            InsertIntoCurrentOrder(entity);
+            actors.Add(entity);
+            if (Application.IsPlaying(gameObject))
+                InsertIntoCurrentOrder(entity);
             OrderChanged?.Invoke();
         }
     }
@@ -91,14 +121,27 @@ public class TurnSystem : MonoBehaviour
     /// <summary>
     /// Remove an entity from the order. If the current entity is removed, the turn order progresses to the next entity
     /// </summary>
-    public void Remove(TurnBasedEntity entity)
+    public bool Remove(TurnBasedEntity entity)
     {
         if (entity == null)
             throw new ArgumentException("Can't remove a null entity.");
 
+        bool isCurrent = entity == Current;
+
         // Check if the current actor is being removed
-        if (actors.Remove(entity))
+        bool removed = actors.Remove(entity);
+        if (removed)
+        {
             OrderChanged?.Invoke();
+
+            // If the current actor was removed, proceed to the next turn.
+            if (isCurrent)
+                QueueNextTurn();
+            else
+                currentOrder.Remove(entity);
+        }
+
+        return removed;
     }
 
     /// <summary>
@@ -171,7 +214,7 @@ public class TurnSystem : MonoBehaviour
         if (currentNode != null)
         {
             // Actor gets notified FIRST.
-            Current.OnTurnEnd();
+            Current?.OnTurnEnd();
             TurnEnded?.Invoke(Current);
         }
     }
@@ -192,7 +235,7 @@ public class TurnSystem : MonoBehaviour
         if (currentNode != null)
         {
             // Actor gets notified FIRST
-            Current.OnTurnStart();
+            Current?.OnTurnStart();
             TurnStarted?.Invoke(Current);
         }
     }
@@ -215,17 +258,20 @@ public class TurnSystem : MonoBehaviour
 
     private void InsertIntoCurrentOrder(TurnBasedEntity entity)
     {
-        LinkedListNode<TurnBasedEntity> walker = currentOrder.First;
+        if (currentOrder != null)
+        {
+            LinkedListNode<TurnBasedEntity> walker = currentOrder.First;
 
-        // Walk until there's no more, or we find one with lower priority
-        while (walker != null && walker.Value.Priority < entity.Priority)
-            walker = walker.Next;
+            // Walk until there's no more, or we find one with lower priority
+            while (walker != null && entity.Priority > walker.Value.Priority)
+                walker = walker.Next;
 
-        // Add in front of the last found entity, or last if there was none.
-        if (walker == null)
-            currentOrder.AddLast(entity);
-        else
-            currentOrder.AddBefore(walker, entity);
+            // Add in front of the last found entity, or last if there was none.
+            if (walker == null)
+                currentOrder.AddLast(entity);
+            else
+                currentOrder.AddBefore(walker, entity);
+        }
     }
 
     private void MoveToNextNode()

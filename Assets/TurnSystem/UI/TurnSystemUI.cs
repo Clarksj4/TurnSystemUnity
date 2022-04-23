@@ -37,12 +37,12 @@ public class TurnSystemUI : MonoBehaviour
         Clear();
 
         // Add each entity
-        foreach (var entity in turnSystem.Order)
+        foreach (var entity in turnSystem.CurrentRoundOrder ?? turnSystem.NextRoundOrder)
             Add(entity);
 
         // Order them, and scroll to the current entity
         PositionItems();
-        ScrollToCurrent();
+        ScrollToCurrent(true);
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ public class TurnSystemUI : MonoBehaviour
     /// </summary>
     public void TurnStarted()
     {
-        ScrollToCurrent();
+        ScrollToCurrent(false);
     }
 
 	void Start ()
@@ -58,9 +58,6 @@ public class TurnSystemUI : MonoBehaviour
         // Size elements based on prefab size
         Viewport.sizeDelta = new Vector2(Viewport.sizeDelta.x, VisibleItems * UIPrefab.sizeDelta.y);
         Selection.sizeDelta = new Vector2(Selection.sizeDelta.x, UIPrefab.sizeDelta.y) + SelectionSizePadding;
-
-        // Fill with entities from order
-        Refresh();
 	}
 	
     /// <summary>
@@ -99,7 +96,7 @@ public class TurnSystemUI : MonoBehaviour
     void PositionItems()
     {
         int i = 0;
-        foreach (var entity in turnSystem.Order)
+        foreach (var entity in turnSystem.CurrentRoundOrder ?? turnSystem.NextRoundOrder)
         {
             // Get associated RectTransform, place in order
             RectTransform ui = entityCatalogue[entity];
@@ -113,7 +110,7 @@ public class TurnSystemUI : MonoBehaviour
     /// <summary>
     /// Scrolls to the current entity over time
     /// </summary>
-    void ScrollToCurrent()
+    void ScrollToCurrent(bool immediate)
     {
         int index = -1;
 
@@ -124,16 +121,16 @@ public class TurnSystemUI : MonoBehaviour
             index = associatedRect.GetSiblingIndex();
         }
 
-        ScrollTo(index);
+        ScrollTo(index, immediate);
     }
 
     /// <summary>
     /// Scrolls nth entity in the order over times
     /// </summary>
-    void ScrollTo(int index)
+    void ScrollTo(int index, bool immediate)
     {
         StopAllCoroutines();
-        StartCoroutine(DoScroll(index, ScrollDuration));
+        StartCoroutine(DoScroll(index, ScrollDuration, immediate));
     }
 
     /// <summary>
@@ -151,14 +148,14 @@ public class TurnSystemUI : MonoBehaviour
     /// <summary>
     /// Coroutine scrolls the content panel over time
     /// </summary>
-    IEnumerator DoScroll(int index, float duration)
+    IEnumerator DoScroll(int index, float duration, bool immediate)
     {
         // Lerp between current position and position of index over duration
         Vector2 start = ContentPanel.anchoredPosition;
         Vector2 destination = IndexPosition(index);
         float time = 0;
 
-        while (time < duration)
+        while (!immediate && time < duration)
         {
             // Percent complete
             float t = time / duration;
