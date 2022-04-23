@@ -138,7 +138,10 @@ public class TurnSystem : MonoBehaviour
             if (isCurrent)
                 QueueNextTurn();
             else
-                currentOrder.Remove(entity);
+            {
+                if (Application.IsPlaying(gameObject))
+                    currentOrder.Remove(entity);
+            }
         }
 
         return removed;
