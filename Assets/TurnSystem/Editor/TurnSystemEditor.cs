@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 
 [CustomEditor(typeof(TurnSystem))]
 public class TurnSystemEditor : Editor
@@ -124,7 +125,8 @@ public class TurnSystemEditor : Editor
                 // If there's actors draw them
                 if (turnSystem.ActorCount > 0)
                 {
-                    foreach (var actor in turnSystem.Order)
+                    IEnumerable<TurnBasedEntity> actors = turnSystem.Order ?? turnSystem.NextRoundOrder;
+                    foreach (var actor in actors)
                         DrawActorListItem(turnSystem, actor);
                 }
 

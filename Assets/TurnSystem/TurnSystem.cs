@@ -27,13 +27,13 @@ public class TurnSystem : MonoBehaviour
     public UnityEvent OnRoundEnded;
 
     /// <summary>
-    /// Gets the actors in the order they will act this round.
+    /// Gets the actors in the order they will act this round - null if the round hasn't started.
     /// </summary>
-    public IEnumerable<TurnBasedEntity> Order => currentOrder.Where(a => actors.Contains(a));
+    public IEnumerable<TurnBasedEntity> Order => currentOrder?.Where(a => actors.Contains(a));
     /// <summary>
     /// Gets the actors in the order they will act next round.
     /// </summary>
-    public IEnumerable<TurnBasedEntity> NextRoundOrder => actors.OrderBy(a => a.Priority);
+    public IEnumerable<TurnBasedEntity> NextRoundOrder => actors?.OrderBy(a => a.Priority);
     /// <summary>
     /// Gets the actor whose turn it is.
     /// </summary>
@@ -63,7 +63,6 @@ public class TurnSystem : MonoBehaviour
 
     private bool turnEndInProgress = false;
     private bool nextTurnRequested = false;
-    private bool roundStarted = false;
 
     private void Start()
     {
@@ -107,7 +106,7 @@ public class TurnSystem : MonoBehaviour
     /// </summary>
     public void UpdatePriority(TurnBasedEntity actor)
     {
-        if (roundStarted)
+        if (currentNode != null)
             throw new ArgumentException("Can't update priority during a round.");
 
         // Notify that an object has had its priority changed
@@ -146,48 +145,72 @@ public class TurnSystem : MonoBehaviour
         nextTurnRequested = false;
         turnEndInProgress = true;
 
-        // Notify that the current actor's turn is ending
-        if (Current != null)
+        // If there is currently an actor, end their turn.
+        if (currentNode != null)
+            EndCurrentActorsTurn();
+        else
+            StartRound();
+
+        // Move to the next actor in order.
+        MoveToNextNode();
+
+        // If there is a next actor, then start their turn.
+        if (currentNode != null)
+            StartCurrentActorsTurn();
+        else
+            EndRound();
+
+        // Go to next turn if there is one queued.
+        turnEndInProgress = false;
+        if (nextTurnRequested)
+            Next();
+    }
+
+    private void EndCurrentActorsTurn()
+    {
+        if (currentNode != null)
         {
+            // Actor gets notified FIRST.
             Current.OnTurnEnd();
             TurnEnded?.Invoke(Current);
         }
+    }
 
-        // If the round hasn't started notify that a new one
-        // is starting
-        if (!roundStarted)
+    private void StartRound()
+    {
+        if (currentNode == null)
         {
+            // Lock in the order of actors for the upcoming round.
+            currentOrder = NextRoundOrder.ToLinkedList();
             RoundCount++;
-            roundStarted = true;
             OnRoundStarting?.Invoke();
         }
+    }
 
-        // Go to next thing in the turn order
-        bool anyMore = MoveToNextNode();
-
-        // If there's nothing left in the order then the round has ended
-        if (!anyMore)
+    private void StartCurrentActorsTurn()
+    {
+        if (currentNode != null)
         {
-            roundStarted = false;
-            OnRoundEnded?.Invoke();
-
-            if (AutoLoop)
-                QueueNextTurn();
-        }
-
-        // Otherwise, let the new thing know its turn is
-        // starting
-        else
-        {
-            // Notify the turn based thing FIRST - then other listeners.
+            // Actor gets notified FIRST
             Current.OnTurnStart();
             TurnStarted?.Invoke(Current);
         }
+    }
 
-        turnEndInProgress = false;
+    private void EndRound()
+    {
+        if (currentNode == null)
+        {
+            OnRoundEnded?.Invoke();
 
-        if (nextTurnRequested)
-            Next();
+            // Clear the current order of actors - a new order will be determined
+            // at the start of the round.
+            currentOrder = null;
+
+            // Queue another turn if set to auto loop.
+            if (AutoLoop)
+                QueueNextTurn();
+        }
     }
 
     private void InsertIntoCurrentOrder(TurnBasedEntity entity)
@@ -205,14 +228,12 @@ public class TurnSystem : MonoBehaviour
             currentOrder.AddBefore(walker, entity);
     }
 
-    private bool MoveToNextNode()
+    private void MoveToNextNode()
     {
         // Get the next node, or null if there isn't one.
         if (currentNode == null)
             currentNode = currentOrder.First;
         else
             currentNode = currentNode.Next;
-
-        return currentNode != null;
     }
 }
