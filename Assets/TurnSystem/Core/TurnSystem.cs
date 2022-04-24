@@ -109,7 +109,7 @@ namespace TurnBased
                 // If the current actor was removed, proceed to the next turn.
                 if (isCurrent)
                     QueueNextTurn();
-                else
+                else if (currentOrder != null)
                     currentOrder.Remove(entity);
             }
 
