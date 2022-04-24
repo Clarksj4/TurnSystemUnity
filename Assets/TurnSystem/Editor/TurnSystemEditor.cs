@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using TurnBased;
 
 [CustomEditor(typeof(TurnSystem))]
 public class TurnSystemEditor : Editor
@@ -103,7 +103,7 @@ public class TurnSystemEditor : Editor
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
 
-        HandleDragAndDrop();
+        //HandleDragAndDrop();
     }
 
     private void DrawActorListHeader()
